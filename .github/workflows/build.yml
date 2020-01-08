@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'feature/**'      
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: |
+        git fetch --prune --unshallow
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@master
+      with:
+        dotnet-version: 3.1.100
+    - name: Version
+      run: |
+        dotnet tool install -g gitversion.tool --version 5.1.4-beta1.41
+        dotnet gitversion /output buildserver
+    - name: Publish
+      run: |
+        dotnet publish ./source/ -r win-x64 -f net48 --configuration Release -p:Version="$env:GitVersion_SemVer" -p:InformationalVersion="$($env:GitVersion_SemVer)-$env.GitVersion_ShortSha" -o ./artifacts/sidekick
+        Compress-Archive -Path ./artifacts/sidekick -DestinationPath "./artifacts/sidekick-$($env:GitVersion_SemVer).zip"
+    - name: Tag
+      if: startsWith(github.ref, 'refs/heads/release/')
+      run: |
+        git tag "v$env:GitVersion_SemVer"
+        git push origin "v$env:GitVersion_SemVer"
+    - name: Release
+      #Publish release artifacts for tags only
+      if: startsWith(github.ref, 'refs/heads/release/')
+      uses: Alkrun/action-gh-release@nametagfix
+      with:
+        name: v${{ env.GitVersion_SemVer }}
+        prerelease: ${{ env.GitVersion_PreReleaseLabel != '' }}
+        files: ./artifacts/sidekick-*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
