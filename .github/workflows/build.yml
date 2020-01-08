@@ -26,13 +26,14 @@ jobs:
         dotnet publish ./source/ -r win-x64 -f net48 --configuration Release -p:Version="$env:GitVersion_SemVer" -p:InformationalVersion="$($env:GitVersion_SemVer)-$env.GitVersion_ShortSha" -o ./artifacts/sidekick
         Compress-Archive -Path ./artifacts/sidekick -DestinationPath "./artifacts/sidekick-$($env:GitVersion_SemVer).zip"
     - name: Tag
-      if: startsWith(github.ref, 'refs/heads/release/')
+      #Publish build artifacts for master, release/*, develop branches only
+      if: startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
       run: |
         git tag "v$env:GitVersion_SemVer"
         git push origin "v$env:GitVersion_SemVer"
     - name: Release
-      #Publish release artifacts for tags only
-      if: startsWith(github.ref, 'refs/heads/release/')
+      #Publish build artifacts for master, release/*, develop branches only
+      if: startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
       uses: Alkrun/action-gh-release@nametagfix
       with:
         name: v${{ env.GitVersion_SemVer }}

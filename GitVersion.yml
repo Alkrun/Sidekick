@@ -3,18 +3,18 @@ mode: ContinuousDeployment
 branches:
   # Beta builds come from devleop branch
   develop:
-    tag: beta
+    tag: alpha
     increment: Patch
   # Releases builds from branch name like: 'release/major.minor.patch'
   release:
     regex: ^releases?[/-]
-    tag: ''
+    tag: beta
     mode: ContinuousDelivery
     is-release-branch: true
   # We build/publish out of release branches, but this makes builds from master produce the same versioning after a release is merged to master
   master:
     regex: ^master
-    tag: ''
+    tag: beta
     is-release-branch: true
 ignore:
   sha: []
